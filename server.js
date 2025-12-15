@@ -9,7 +9,7 @@ connectDB();
 
 const app = express();
 app.use(express.json());
-app.use(cors({ origin: "https://snapsite-virid.vercel.app" }));
+app.use(cors({ origin: ["https://snapsite-virid.vercel.app", "http://localhost:3000"] }));
 app.get("/", (req, res) => {
   res.send("Backend running");
 });
