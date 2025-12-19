@@ -85,12 +85,25 @@ export const saveTemplate = async (req, res) => {
       return res.status(400).json({ message: "Name and layout are required" });
     }
 
+    // Handle thumbnail - can be URL, base64 data URL, or file path
+    let thumbnailUrl = thumbnail;
+    if (req.file) {
+      // If file was uploaded via multer
+      thumbnailUrl = `/uploads/thumbnails/${req.file.filename}`;
+    } else if (thumbnail && thumbnail.startsWith("data:image")) {
+      // Base64 data URL - store as is (or convert to file if needed)
+      thumbnailUrl = thumbnail;
+    } else if (thumbnail) {
+      // External URL or existing path
+      thumbnailUrl = thumbnail;
+    }
+
     const savedTemplate = await SavedTemplate.create({
       user: userId,
       name,
       originalTemplateSlug,
       layout,
-      thumbnail,
+      thumbnail: thumbnailUrl || "",
       isPublic: isPublic || false,
     });
 
@@ -167,8 +180,23 @@ export const updateSavedTemplate = async (req, res) => {
     const updateData = { updatedAt: new Date() };
     if (name !== undefined) updateData.name = name;
     if (layout !== undefined) updateData.layout = layout;
-    if (thumbnail !== undefined) updateData.thumbnail = thumbnail;
     if (isPublic !== undefined) updateData.isPublic = isPublic;
+
+    // Handle thumbnail update
+    if (thumbnail !== undefined) {
+      let thumbnailUrl = thumbnail;
+      if (req.file) {
+        // If file was uploaded via multer
+        thumbnailUrl = `/uploads/thumbnails/${req.file.filename}`;
+      } else if (thumbnail && thumbnail.startsWith("data:image")) {
+        // Base64 data URL - store as is
+        thumbnailUrl = thumbnail;
+      } else if (thumbnail) {
+        // External URL or existing path
+        thumbnailUrl = thumbnail;
+      }
+      updateData.thumbnail = thumbnailUrl;
+    }
 
     const template = await SavedTemplate.findOneAndUpdate(
       { _id: id, user: userId },
@@ -184,6 +212,39 @@ export const updateSavedTemplate = async (req, res) => {
   } catch (err) {
     console.error("Update saved template error:", err);
     return res.status(500).json({ error: "Server error updating template" });
+  }
+};
+
+// Update thumbnail only
+export const updateTemplateThumbnail = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { id } = req.params;
+    const { thumbnail } = req.body;
+
+    let thumbnailUrl = thumbnail;
+    if (req.file) {
+      thumbnailUrl = `/uploads/thumbnails/${req.file.filename}`;
+    } else if (thumbnail && thumbnail.startsWith("data:image")) {
+      thumbnailUrl = thumbnail;
+    } else if (thumbnail) {
+      thumbnailUrl = thumbnail;
+    }
+
+    const template = await SavedTemplate.findOneAndUpdate(
+      { _id: id, user: userId },
+      { thumbnail: thumbnailUrl || "", updatedAt: new Date() },
+      { new: true }
+    ).populate("user", "name username email");
+
+    if (!template) {
+      return res.status(404).json({ message: "Template not found" });
+    }
+
+    return res.status(200).json({ message: "Thumbnail updated", template });
+  } catch (err) {
+    console.error("Update thumbnail error:", err);
+    return res.status(500).json({ error: "Server error updating thumbnail" });
   }
 };
 

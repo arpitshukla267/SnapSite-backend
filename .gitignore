@@ -45,3 +45,6 @@ pm2.log
 # Temp files
 tmp/
 temp/
+
+# Uploaded files
+uploads/

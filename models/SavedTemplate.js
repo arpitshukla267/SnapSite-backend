@@ -6,7 +6,7 @@ const savedTemplateSchema = new mongoose.Schema(
     name: { type: String, required: true },
     originalTemplateSlug: { type: String, required: false }, // Original template if based on one
     layout: { type: Array, required: true }, // Full layout with sections and props
-    thumbnail: { type: String, required: false },
+    thumbnail: { type: String, required: true },
     isPublic: { type: Boolean, default: false }, // Visibility setting
   },
   { timestamps: true }
